@@ -8,9 +8,13 @@ AI-powered English practice app with:
 
 - Pronunciation feedback from recorded audio
 - Natural `Listen` playback using OpenAI TTS (with browser voice fallback if TTS fails)
-- Grammar explanation and rewrite suggestions for selected text selection only
+- Grammar explanation and rewrite suggestions for selected text only
+- Mobile-friendly dashboard navigation (hamburger + slide menu)
+- Learning motivation UX: streak, level bar, and 90+ score celebration
 
 ## Product Tour
+
+Screenshots will be updated soon.
 
 ### 1. Practice Screen
 
@@ -22,7 +26,7 @@ Write or paste a sentence, listen to natural TTS playback, and record your voice
 
 Quick walkthrough of selection -> analysis -> suggestion apply.
 
-![Grammar checker demo](public/grammer-checker.gif)
+![Grammar checker demo](public/grammer-checker.png)
 
 ### 3. Pronunciation Feedback
 
@@ -31,6 +35,12 @@ After recording, the app shows an AI score with concrete feedback for consonants
 ![Pronunciation feedback](public/pronunciation-check.png)
 
 ## Setup
+
+Node.js `20+` is required.
+
+```bash
+node -v
+```
 
 Create `.env.local`:
 
@@ -65,9 +75,17 @@ Open `http://localhost:3000` in your browser.
 6. If direct audio analysis fails, the API falls back to transcription-based analysis.
 7. You can select text in the textarea and tap `Analyze text` to get grammar explanations and rewrite suggestions for the selected range from `/api/text-feedback`.
 8. Tap `Apply this suggestion` to replace the selected text directly.
+9. Save results to history and keep your streak/level progress moving.
+
+## Learning Motivation UX
+
+- `Streak`: calculated from saved daily practice history
+- `Level`: XP-based progression from saved sessions
+- `90+ Score Celebration`: special UI appears when pronunciation score reaches 90 or higher
 
 ## Notes
 
 - Pronunciation scoring is AI-driven and includes guardrails to prevent high scores for unrelated/non-English speech.
 - This is not a phoneme-level lab-grade scoring system.
 - Browser support depends on `MediaRecorder` and microphone permissions.
+- Streak/level stats are stored in browser `localStorage`.
