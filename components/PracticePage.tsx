@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Player from "@/components/Player";
 import Recorder from "@/components/Recorder";
 import type { PronunciationFeedback } from "@/types/pronunciation";
@@ -17,11 +17,88 @@ type TextFeedbackResult = TextFeedbackResponse & {
 };
 
 const STORAGE_KEY = "practiceHistory";
+const XP_PER_PRACTICE = 10;
+const XP_BONUS_90_PLUS = 5;
+const XP_PER_LEVEL = 100;
+const CELEBRATION_VISIBLE_MS = 7000;
+
+type LearningStats = {
+  totalPractices: number;
+  streakDays: number;
+  level: number;
+  xpInLevel: number;
+  xpToNextLevel: number;
+  levelProgressPercent: number;
+};
+
 const buildFingerprint = (record: {
   sentence: string;
   correction: string;
   pronunciationScore: number;
 }) => `${record.sentence}::${record.correction}::${record.pronunciationScore}`;
+
+const toDayKey = (date: Date) => {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const loadHistory = () => {
+  if (typeof window === "undefined") {
+    return [] as PracticeRecord[];
+  }
+
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as PracticeRecord[]) : [];
+  } catch {
+    return [] as PracticeRecord[];
+  }
+};
+
+const calculateStreakDays = (records: PracticeRecord[]) => {
+  const daySet = new Set(
+    records.map((record) => toDayKey(new Date(record.createdAt))),
+  );
+  const today = new Date();
+  let cursor = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+  if (!daySet.has(toDayKey(cursor))) {
+    cursor.setDate(cursor.getDate() - 1);
+    if (!daySet.has(toDayKey(cursor))) {
+      return 0;
+    }
+  }
+
+  let streak = 0;
+  while (daySet.has(toDayKey(cursor))) {
+    streak += 1;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
+};
+
+const calculateLearningStats = (records: PracticeRecord[]): LearningStats => {
+  const totalPractices = records.length;
+  const totalXp = records.reduce((sum, item) => {
+    const bonusXp = item.pronunciationScore >= 90 ? XP_BONUS_90_PLUS : 0;
+    return sum + XP_PER_PRACTICE + bonusXp;
+  }, 0);
+  const level = Math.floor(totalXp / XP_PER_LEVEL) + 1;
+  const xpInLevel = totalXp % XP_PER_LEVEL;
+  const xpToNextLevel = XP_PER_LEVEL - xpInLevel;
+  const levelProgressPercent = Math.round((xpInLevel / XP_PER_LEVEL) * 100);
+
+  return {
+    totalPractices,
+    streakDays: calculateStreakDays(records),
+    level,
+    xpInLevel,
+    xpToNextLevel,
+    levelProgressPercent,
+  };
+};
 
 const loadLatestFingerprint = () => {
   if (typeof window === "undefined") {
@@ -72,7 +149,23 @@ export default function PracticePage() {
   const [lastSavedFingerprint, setLastSavedFingerprint] = useState<
     string | null
   >(loadLatestFingerprint);
+  const [learningStats, setLearningStats] = useState<LearningStats>(() =>
+    calculateLearningStats(loadHistory()),
+  );
+  const [showNinetyCelebration, setShowNinetyCelebration] = useState(false);
   const isSavingRef = useRef(false);
+
+  useEffect(() => {
+    if (!showNinetyCelebration) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setShowNinetyCelebration(false);
+    }, CELEBRATION_VISIBLE_MS);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [showNinetyCelebration]);
 
   const analyzePronunciationFromAudio = async (
     targetText: string,
@@ -110,6 +203,9 @@ export default function PracticePage() {
       const result = (await response.json()) as PronunciationFeedback;
       setAiFeedback(result);
       setSpokenText(result.transcribedText);
+      if (result.overallScore >= 90) {
+        setShowNinetyCelebration(true);
+      }
     } catch (error) {
       const message =
         error instanceof Error
@@ -297,6 +393,7 @@ export default function PracticePage() {
 
       const nextHistory = [newRecord, ...parsed];
       localStorage.setItem(STORAGE_KEY, JSON.stringify(nextHistory));
+      setLearningStats(calculateLearningStats(nextHistory));
       setLastSavedFingerprint(currentFingerprint);
       setSaveMessage("Saved to history.");
     } catch {
@@ -327,6 +424,43 @@ export default function PracticePage() {
   return (
     <main className="flex min-h-full flex-col gap-6 wrap-break-word p-4 sm:p-6">
       <h1 className="text-2xl font-bold sm:text-3xl">Practice</h1>
+
+      <section className="ui-card w-full max-w-2xl space-y-3 rounded-lg p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm font-semibold text-orange-600">
+            🔥 {learningStats.streakDays}-day streak
+          </p>
+          <p className="text-sm font-semibold">
+            Level {learningStats.level} • {learningStats.totalPractices} practices
+          </p>
+        </div>
+        <div>
+          <div className="mb-1 flex items-center justify-between text-xs">
+            <span className="ui-text-muted">XP Progress</span>
+            <span className="ui-text-muted">
+              {learningStats.xpInLevel}/{XP_PER_LEVEL} XP
+            </span>
+          </div>
+          <div className="h-2 w-full overflow-hidden rounded-full bg-surface-2">
+            <div
+              className="h-full rounded-full bg-primary transition-all duration-500"
+              style={{ width: `${learningStats.levelProgressPercent}%` }}
+            />
+          </div>
+          <p className="ui-text-muted mt-1 text-xs">
+            {learningStats.xpToNextLevel} XP to next level
+          </p>
+        </div>
+      </section>
+
+      {showNinetyCelebration && (
+        <section className="w-full max-w-2xl rounded-lg border border-amber-300 bg-amber-50 p-4 text-amber-900 shadow-sm">
+          <p className="text-base font-bold sm:text-lg">🌟 90+ Score! Amazing work!</p>
+          <p className="mt-1 text-sm">
+            Save this result to earn bonus XP and level up faster.
+          </p>
+        </section>
+      )}
 
       <div className="w-full max-w-2xl space-y-2">
         <textarea
