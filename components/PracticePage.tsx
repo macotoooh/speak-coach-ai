@@ -318,6 +318,11 @@ export default function PracticePage() {
     : null;
   const isSaveDisabled =
     !aiFeedback || isSaving || currentFingerprint === lastSavedFingerprint;
+  const saveMessageTone = saveMessage?.startsWith("Saved")
+    ? "success"
+    : saveMessage?.startsWith("Failed")
+      ? "error"
+      : "info";
 
   return (
     <main className="flex min-h-full flex-col gap-6 wrap-break-word p-4 sm:p-6">
@@ -368,7 +373,21 @@ export default function PracticePage() {
         </button>
       </div>
 
-      {saveMessage && <p className="ui-text-muted text-sm">{saveMessage}</p>}
+      {saveMessage && (
+        <p
+          role={saveMessageTone === "error" ? "alert" : "status"}
+          aria-live="polite"
+          className={`w-full max-w-2xl rounded-md border px-3 py-2 text-sm font-medium ${
+            saveMessageTone === "success"
+              ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+              : saveMessageTone === "error"
+                ? "border-red-300 bg-red-50 text-red-800"
+                : "border-amber-300 bg-amber-50 text-amber-800"
+          }`}
+        >
+          {saveMessage}
+        </p>
+      )}
 
       {(isTextAnalyzing || textFeedback || textFeedbackError) && (
         <section className="ui-card w-full max-w-2xl rounded-lg p-4">
