@@ -1,6 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faMicrophone, faStop } from "@fortawesome/free-solid-svg-icons";
 
 type Props = {
   onRecorded: (audioBlob: Blob) => void;
@@ -72,9 +74,19 @@ export default function Recorder({ onRecorded, disabled = false }: Props) {
     <button
       onClick={isRecording ? stopRecording : startRecording}
       disabled={disabled}
-      className="ui-btn-accent w-full rounded-lg px-4 py-2 disabled:opacity-60 sm:w-auto"
+      className="ui-btn-accent inline-flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2 disabled:opacity-60 sm:w-auto"
     >
-      {isRecording ? "⏹ Stop" : "🎙 Record"}
+      {isRecording ? (
+        <>
+          <FontAwesomeIcon icon={faStop} className="h-4 w-4" />
+          <span>Stop</span>
+        </>
+      ) : (
+        <>
+          <FontAwesomeIcon icon={faMicrophone} className="h-4 w-4" />
+          <span>Record</span>
+        </>
+      )}
     </button>
   );
 }

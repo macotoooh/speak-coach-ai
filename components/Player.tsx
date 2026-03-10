@@ -1,11 +1,35 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faVolumeHigh } from "@fortawesome/free-solid-svg-icons";
 
-export default function Player({ text }: { text: string }) {
+type PlayerProps = {
+  text: string;
+  selectedText?: string;
+};
+
+export default function Player({ text, selectedText = "" }: PlayerProps) {
   const [isLoading, setIsLoading] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const objectUrlRef = useRef<string | null>(null);
+  const audioCacheRef = useRef<Map<string, string>>(new Map());
+  const CACHE_LIMIT = 20;
+
+  useEffect(() => {
+    const cachedAudio = audioCacheRef.current;
+
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      for (const url of cachedAudio.values()) {
+        URL.revokeObjectURL(url);
+      }
+      cachedAudio.clear();
+      speechSynthesis.cancel();
+    };
+  }, []);
 
   const getPreferredVoice = () => {
     const voices = speechSynthesis.getVoices();
@@ -36,7 +60,7 @@ export default function Player({ text }: { text: string }) {
     return englishVoice;
   };
 
-  const speakWithBrowserVoice = () => {
+  const speakWithBrowserVoice = (speechText: string) => {
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
@@ -44,7 +68,7 @@ export default function Player({ text }: { text: string }) {
 
     speechSynthesis.cancel();
 
-    const utterance = new SpeechSynthesisUtterance(text);
+    const utterance = new SpeechSynthesisUtterance(speechText);
     const preferredVoice = getPreferredVoice();
     if (preferredVoice) {
       utterance.voice = preferredVoice;
@@ -59,8 +83,51 @@ export default function Player({ text }: { text: string }) {
     speechSynthesis.speak(utterance);
   };
 
+  const evictOldestCachedAudio = () => {
+    const cache = audioCacheRef.current;
+    if (cache.size <= CACHE_LIMIT) {
+      return;
+    }
+
+    const oldestKey = cache.keys().next().value as string | undefined;
+    if (!oldestKey) {
+      return;
+    }
+
+    const oldestUrl = cache.get(oldestKey);
+    if (oldestUrl) {
+      URL.revokeObjectURL(oldestUrl);
+    }
+
+    cache.delete(oldestKey);
+  };
+
   const speak = async () => {
-    if (!text.trim()) {
+    const trimmedSelectedText = selectedText.trim();
+    const speechText =
+      trimmedSelectedText.length > 0 ? trimmedSelectedText : text;
+
+    if (!speechText.trim()) {
+      return;
+    }
+
+    const playAudio = async (objectUrl: string) => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+
+      const audio = new Audio(objectUrl);
+      audioRef.current = audio;
+      audio.onended = () => {
+        audioRef.current = null;
+      };
+      await audio.play();
+    };
+
+    const cachedUrl = audioCacheRef.current.get(speechText);
+    if (cachedUrl) {
+      speechSynthesis.cancel();
+      await playAudio(cachedUrl);
       return;
     }
 
@@ -72,7 +139,7 @@ export default function Player({ text }: { text: string }) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text: speechText }),
       });
 
       if (!response.ok) {
@@ -81,41 +148,37 @@ export default function Player({ text }: { text: string }) {
 
       const audioBlob = await response.blob();
 
-      if (objectUrlRef.current) {
-        URL.revokeObjectURL(objectUrlRef.current);
-      }
-
       const objectUrl = URL.createObjectURL(audioBlob);
-      objectUrlRef.current = objectUrl;
+      audioCacheRef.current.set(speechText, objectUrl);
+      evictOldestCachedAudio();
 
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
-
-      const audio = new Audio(objectUrl);
-      audioRef.current = audio;
-      audio.onended = () => {
-        if (objectUrlRef.current) {
-          URL.revokeObjectURL(objectUrlRef.current);
-          objectUrlRef.current = null;
-        }
-        audioRef.current = null;
-      };
-      await audio.play();
+      await playAudio(objectUrl);
     } catch {
-      speakWithBrowserVoice();
+      speakWithBrowserVoice(speechText);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const hasSelectedText = selectedText.trim().length > 0;
+
   return (
     <button
+      onMouseDown={(event) => {
+        event.preventDefault();
+      }}
       onClick={() => void speak()}
       disabled={isLoading}
-      className="ui-btn-primary w-full rounded-lg px-4 py-2 disabled:opacity-60 sm:w-auto"
+      className="ui-btn-primary inline-flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2 disabled:opacity-60 sm:w-auto"
     >
-      {isLoading ? "Generating..." : "🔊 Listen"}
+      {isLoading ? (
+        "Generating..."
+      ) : (
+        <>
+          <FontAwesomeIcon icon={faVolumeHigh} className="h-4 w-4" />
+          <span>{hasSelectedText ? "Listen Selection" : "Listen"}</span>
+        </>
+      )}
     </button>
   );
 }

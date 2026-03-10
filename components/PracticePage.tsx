@@ -1,6 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faFireFlameCurved,
+  faStar,
+} from "@fortawesome/free-solid-svg-icons";
 import Player from "@/components/Player";
 import Recorder from "@/components/Recorder";
 import type { PronunciationFeedback } from "@/types/pronunciation";
@@ -62,7 +67,11 @@ const calculateStreakDays = (records: PracticeRecord[]) => {
     records.map((record) => toDayKey(new Date(record.createdAt))),
   );
   const today = new Date();
-  let cursor = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const cursor = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate(),
+  );
 
   if (!daySet.has(toDayKey(cursor))) {
     cursor.setDate(cursor.getDate() - 1);
@@ -427,11 +436,13 @@ export default function PracticePage() {
 
       <section className="ui-card w-full max-w-2xl space-y-3 rounded-lg p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-sm font-semibold text-orange-600">
-            🔥 {learningStats.streakDays}-day streak
+          <p className="inline-flex items-center gap-2 text-sm font-semibold text-orange-600">
+            <FontAwesomeIcon icon={faFireFlameCurved} className="h-4 w-4" />
+            <span>{learningStats.streakDays}-day streak</span>
           </p>
           <p className="text-sm font-semibold">
-            Level {learningStats.level} • {learningStats.totalPractices} practices
+            Level {learningStats.level} • {learningStats.totalPractices}{" "}
+            practices
           </p>
         </div>
         <div>
@@ -455,7 +466,10 @@ export default function PracticePage() {
 
       {showNinetyCelebration && (
         <section className="w-full max-w-2xl rounded-lg border border-amber-300 bg-amber-50 p-4 text-amber-900 shadow-sm">
-          <p className="text-base font-bold sm:text-lg">🌟 90+ Score! Amazing work!</p>
+          <p className="inline-flex items-center gap-2 text-base font-bold sm:text-lg">
+            <FontAwesomeIcon icon={faStar} className="h-4 w-4" />
+            <span>90+ Score! Amazing work!</span>
+          </p>
           <p className="mt-1 text-sm">
             Save this result to earn bonus XP and level up faster.
           </p>
@@ -465,7 +479,7 @@ export default function PracticePage() {
       <div className="w-full max-w-2xl space-y-2">
         <textarea
           ref={textareaRef}
-          className="ui-input w-full rounded p-3"
+          className="ui-input w-full rounded p-3 selection:bg-slate-300 selection:text-slate-900"
           value={text}
           onChange={(e) => {
             setText(e.target.value);
@@ -481,7 +495,7 @@ export default function PracticePage() {
           <p className="ui-text-muted line-clamp-2 text-sm">
             {selectedText
               ? `Selected: "${selectedText}"`
-              : "Select text to analyze"}
+              : "Select text to analyze or listen"}
           </p>
           <button
             type="button"
@@ -495,7 +509,7 @@ export default function PracticePage() {
       </div>
 
       <div className="grid w-full max-w-2xl grid-cols-1 gap-3 sm:flex sm:flex-wrap">
-        <Player text={text} />
+        <Player text={text} selectedText={selectedText} />
         <Recorder onRecorded={handleRecordedAudio} disabled={isAnalyzing} />
         <button
           type="button"
