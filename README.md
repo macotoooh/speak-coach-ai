@@ -14,25 +14,43 @@ AI-powered English practice app with:
 
 ## Product Tour
 
-Screenshots will be updated soon.
-
 ### 1. Practice Screen
 
 Write or paste a sentence, listen to natural TTS playback, and record your voice.
 
-![Top screen](public/top.png)
+![Top screen](public/demo.gif)
 
-### 2. Grammar Rewrite (Selected Text)
+#### Quick Steps (demo.gif)
 
-Quick walkthrough of selection -> analysis -> suggestion apply.
+1. Type a sentence in the textarea.
+2. Click `Listen` to hear native-like playback.
+3. Select a word or phrase and click `Listen Selection` to replay only that part.
+4. Click `Record`, speak, then click `Stop`.
+5. Review AI pronunciation feedback and save the result to history.
 
-![Grammar checker demo](public/grammer-checker.png)
+### 2. History Screen
 
-### 3. Pronunciation Feedback
+Review your saved practice sessions in one place.
 
-After recording, the app shows an AI score with concrete feedback for consonants, vowels, and stress.
+- Check your past sentence, correction, and pronunciation score.
+- Track what you practiced recently.
+- Keep a simple daily learning log.
 
-![Pronunciation feedback](public/pronunciation-check.png)
+### 3. Progress Screen
+
+See your learning momentum at a glance.
+
+- View your streak and total practice count.
+- Confirm current level and XP progress.
+- Stay motivated with visible growth over time.
+
+### 4. Settings Screen
+
+Adjust your app environment and learning workflow.
+
+- Access theme and UI preferences.
+- Manage practice-related options from one page.
+- Keep your setup consistent across sessions.
 
 ## Setup
 
