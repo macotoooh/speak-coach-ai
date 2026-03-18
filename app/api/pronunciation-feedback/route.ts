@@ -58,7 +58,8 @@ function getLocalizedFallbackCopy(feedbackLanguage: FeedbackLanguage) {
       consonantComment: "子音に関する分析はありません。",
       vowelComment: "母音に関する分析はありません。",
       stressComment: "ストレスに関する分析はありません。",
-      unclearSpeech: "音声をはっきり検出できませんでした。もう一度お試しください。",
+      unclearSpeech:
+        "音声をはっきり検出できませんでした。もう一度お試しください。",
     };
   }
 
@@ -106,7 +107,9 @@ function normalizeFeedback(
   const rhythmScore = normalizePercentScore(input.rhythmScore);
   const segmentalScore = normalizePercentScore(input.segmentalScore);
   const fluencyScore = normalizePercentScore(input.fluencyScore);
-  const aiTimingScore = normalizeAiTimingScore(input.aiTimingScore ?? rhythmScore);
+  const aiTimingScore = normalizeAiTimingScore(
+    input.aiTimingScore ?? rhythmScore,
+  );
   const aiOverallScore = normalizeOverallScore(input.overallScore);
   const targetMatchScore = normalizePercentScore(input.targetMatchScore);
   const englishConfidence = normalizePercentScore(input.englishConfidence);
@@ -527,12 +530,7 @@ export async function POST(request: Request) {
         : fallbackTranscribedText;
 
     return NextResponse.json(
-      normalizeFeedback(
-        parsed,
-        targetText,
-        transcribedText,
-        feedbackLanguage,
-      ),
+      normalizeFeedback(parsed, targetText, transcribedText, feedbackLanguage),
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";

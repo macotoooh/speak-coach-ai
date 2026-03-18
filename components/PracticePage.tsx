@@ -1,10 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import DifficultySelect from "@/components/DifficultySelect";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFireFlameCurved, faStar } from "@fortawesome/free-solid-svg-icons";
 import Player from "@/components/Player";
 import Recorder from "@/components/Recorder";
+import {
+  DEFAULT_EXAMPLE_SENTENCE_LEVEL,
+  type ExampleSentenceLevel,
+} from "@/lib/example-sentence-level";
 import {
   DEFAULT_FEEDBACK_LANGUAGE,
   readFeedbackLanguage,
@@ -146,6 +151,9 @@ const loadLatestFingerprint = () => {
 
 export default function PracticePage() {
   const [text, setText] = useState("The weather in Vancouver is often rainy.");
+  const [difficultyLevel, setDifficultyLevel] = useState<ExampleSentenceLevel>(
+    DEFAULT_EXAMPLE_SENTENCE_LEVEL,
+  );
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const [selectionRange, setSelectionRange] = useState<SelectionRange | null>(
     null,
@@ -155,6 +163,10 @@ export default function PracticePage() {
     null,
   );
   const [isTextAnalyzing, setIsTextAnalyzing] = useState(false);
+  const [isGeneratingSentence, setIsGeneratingSentence] = useState(false);
+  const [sentenceGenerationError, setSentenceGenerationError] = useState<
+    string | null
+  >(null);
   const [textFeedbackError, setTextFeedbackError] = useState<string | null>(
     null,
   );
@@ -249,6 +261,59 @@ export default function PracticePage() {
 
   const handleRecordedAudio = (audioBlob: Blob) => {
     void analyzePronunciationFromAudio(text, audioBlob);
+  };
+
+  const generateExampleSentence = async () => {
+    setIsGeneratingSentence(true);
+    setSentenceGenerationError(null);
+
+    try {
+      const response = await fetch("/api/example-sentence", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          level: difficultyLevel,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorPayload = (await response.json().catch(() => null)) as {
+          error?: string;
+          detail?: string;
+        } | null;
+        const detailMessage = errorPayload?.detail
+          ? ` (${errorPayload.detail})`
+          : "";
+        throw new Error(
+          `${errorPayload?.error ?? "Failed to generate sentence."}${detailMessage}`,
+        );
+      }
+
+      const result = (await response.json()) as { sentence?: string };
+      const nextSentence = String(result.sentence ?? "").trim();
+
+      if (!nextSentence) {
+        throw new Error("Generated sentence was empty.");
+      }
+
+      setText(nextSentence);
+      setSelectionRange(null);
+      setSelectedText("");
+      setTextFeedback(null);
+      setTextFeedbackError(null);
+      setFeedbackError(null);
+      setAiFeedback(null);
+      setSpokenText("");
+      setSaveMessage(null);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to generate sentence.";
+      setSentenceGenerationError(message);
+    } finally {
+      setIsGeneratingSentence(false);
+    }
   };
 
   const updateSelectionState = () => {
@@ -499,6 +564,42 @@ export default function PracticePage() {
       )}
 
       <div className="w-full max-w-2xl space-y-2">
+        <div className="ui-card rounded-lg p-4">
+          <div className="space-y-4">
+            <DifficultySelect
+              value={difficultyLevel}
+              onChange={setDifficultyLevel}
+              disabled={isGeneratingSentence}
+            />
+            <div className="flex flex-col gap-3 border-t border-border pt-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="ui-text-muted text-sm">
+                Generate a new practice sentence based on the selected
+                difficulty.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => void generateExampleSentence()}
+                  disabled={isGeneratingSentence}
+                  className="ui-btn-primary w-full rounded-md px-4 py-2 text-sm disabled:opacity-50 sm:w-auto"
+                >
+                  {text.trim()
+                    ? isGeneratingSentence
+                      ? "Generating..."
+                      : "Regenerate sentence"
+                    : isGeneratingSentence
+                      ? "Generating..."
+                      : "Generate sentence"}
+                </button>
+              </div>
+            </div>
+          </div>
+          {sentenceGenerationError && (
+            <p className="mt-3 text-sm text-red-600">
+              {sentenceGenerationError}
+            </p>
+          )}
+        </div>
         <textarea
           ref={textareaRef}
           className="ui-input w-full rounded p-3 selection:bg-slate-300 selection:text-slate-900"
