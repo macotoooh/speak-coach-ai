@@ -1,25 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { readPracticeHistory } from "@/lib/practice-history";
 import type { PracticeRecord } from "@/types/PracticeRecord";
 
-const STORAGE_KEY = "practiceHistory";
-
-const loadHistory = (): PracticeRecord[] => {
-  if (typeof window === "undefined") {
-    return [];
-  }
-
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as PracticeRecord[]) : [];
-  } catch {
-    return [];
-  }
-};
-
 export default function ProgressPage() {
-  const [records] = useState<PracticeRecord[]>(loadHistory);
+  const [records] = useState<PracticeRecord[]>(readPracticeHistory);
 
   const stats = useMemo(() => {
     const totalPractices = records.length;

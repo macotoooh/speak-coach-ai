@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { readRecentPracticeHistory } from "@/lib/practice-history";
 import type { PracticeRecord } from "@/types/PracticeRecord";
 
-const STORAGE_KEY = "practiceHistory";
 const MAX_ITEMS = 20;
 
 const formatDate = (iso: string) =>
@@ -12,26 +12,10 @@ const formatDate = (iso: string) =>
     day: "numeric",
   });
 
-const loadHistory = (): PracticeRecord[] => {
-  if (typeof window === "undefined") {
-    return [];
-  }
-
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    const parsed = raw ? (JSON.parse(raw) as PracticeRecord[]) : [];
-    const sorted = [...parsed].sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
-    return sorted.slice(0, MAX_ITEMS);
-  } catch {
-    return [];
-  }
-};
-
 export default function HistoryPage() {
-  const [records] = useState<PracticeRecord[]>(loadHistory);
+  const [records] = useState<PracticeRecord[]>(() =>
+    readRecentPracticeHistory(MAX_ITEMS),
+  );
 
   return (
     <main className="flex min-h-full flex-col gap-6 p-4 sm:p-6">

@@ -16,6 +16,12 @@ import {
   readFeedbackLanguage,
   type FeedbackLanguage,
 } from "@/lib/feedback-language";
+import {
+  buildPracticeFingerprint,
+  readLatestPracticeFingerprint,
+  readPracticeHistory,
+  savePracticeHistory,
+} from "@/lib/practice-history";
 import type { PronunciationFeedback } from "@/types/pronunciation";
 import type { TextFeedbackResponse } from "@/types/text-feedback";
 import type { PracticeRecord } from "@/types/PracticeRecord";
@@ -29,7 +35,6 @@ type TextFeedbackResult = TextFeedbackResponse & {
   range: SelectionRange;
 };
 
-const STORAGE_KEY = "practiceHistory";
 const XP_PER_PRACTICE = 10;
 const XP_BONUS_90_PLUS = 5;
 const XP_PER_LEVEL = 100;
@@ -53,30 +58,11 @@ const EMPTY_LEARNING_STATS: LearningStats = {
   levelProgressPercent: 0,
 };
 
-const buildFingerprint = (record: {
-  sentence: string;
-  correction: string;
-  pronunciationScore: number;
-}) => `${record.sentence}::${record.correction}::${record.pronunciationScore}`;
-
 const toDayKey = (date: Date) => {
   const year = date.getFullYear();
   const month = `${date.getMonth() + 1}`.padStart(2, "0");
   const day = `${date.getDate()}`.padStart(2, "0");
   return `${year}-${month}-${day}`;
-};
-
-const loadHistory = () => {
-  if (typeof window === "undefined") {
-    return [] as PracticeRecord[];
-  }
-
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as PracticeRecord[]) : [];
-  } catch {
-    return [] as PracticeRecord[];
-  }
 };
 
 const calculateStreakDays = (records: PracticeRecord[]) => {
@@ -126,29 +112,6 @@ const calculateLearningStats = (records: PracticeRecord[]): LearningStats => {
   };
 };
 
-const loadLatestFingerprint = () => {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    const parsed = raw ? (JSON.parse(raw) as PracticeRecord[]) : [];
-    const latest = parsed[0];
-
-    if (!latest) {
-      return null;
-    }
-
-    return buildFingerprint({
-      sentence: latest.sentence,
-      correction: latest.correction,
-      pronunciationScore: latest.pronunciationScore,
-    });
-  } catch {
-    return null;
-  }
-};
 
 export default function PracticePage() {
   const [text, setText] = useState("The weather in Vancouver is often rainy.");
@@ -191,9 +154,9 @@ export default function PracticePage() {
   const isSavingRef = useRef(false);
 
   useEffect(() => {
-    const history = loadHistory();
+    const history = readPracticeHistory();
     setLearningStats(calculateLearningStats(history));
-    setLastSavedFingerprint(loadLatestFingerprint());
+    setLastSavedFingerprint(readLatestPracticeFingerprint());
     setFeedbackLanguage(readFeedbackLanguage());
   }, []);
 
@@ -445,7 +408,7 @@ export default function PracticePage() {
 
     const correction =
       textFeedback?.suggestions?.[0] ?? textFeedback?.explanation ?? "";
-    const currentFingerprint = buildFingerprint({
+    const currentFingerprint = buildPracticeFingerprint({
       sentence: text,
       correction,
       pronunciationScore: aiFeedback.overallScore,
@@ -460,13 +423,12 @@ export default function PracticePage() {
     setIsSaving(true);
 
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      const parsed = raw ? (JSON.parse(raw) as PracticeRecord[]) : [];
+      const parsed = readPracticeHistory();
       const latest = parsed[0];
 
       if (
         latest &&
-        buildFingerprint({
+        buildPracticeFingerprint({
           sentence: latest.sentence,
           correction: latest.correction,
           pronunciationScore: latest.pronunciationScore,
@@ -489,7 +451,7 @@ export default function PracticePage() {
       };
 
       const nextHistory = [newRecord, ...parsed];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(nextHistory));
+      savePracticeHistory(nextHistory);
       setLearningStats(calculateLearningStats(nextHistory));
       setLastSavedFingerprint(currentFingerprint);
       setSaveMessage("Saved to history.");
@@ -504,7 +466,7 @@ export default function PracticePage() {
   const currentCorrection =
     textFeedback?.suggestions?.[0] ?? textFeedback?.explanation ?? "";
   const currentFingerprint = aiFeedback
-    ? buildFingerprint({
+    ? buildPracticeFingerprint({
         sentence: text,
         correction: currentCorrection,
         pronunciationScore: aiFeedback.overallScore,
