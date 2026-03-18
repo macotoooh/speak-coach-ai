@@ -36,6 +36,15 @@ type LearningStats = {
   levelProgressPercent: number;
 };
 
+const EMPTY_LEARNING_STATS: LearningStats = {
+  totalPractices: 0,
+  streakDays: 0,
+  level: 1,
+  xpInLevel: 0,
+  xpToNextLevel: XP_PER_LEVEL,
+  levelProgressPercent: 0,
+};
+
 const buildFingerprint = (record: {
   sentence: string;
   correction: string;
@@ -157,12 +166,17 @@ export default function PracticePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [lastSavedFingerprint, setLastSavedFingerprint] = useState<
     string | null
-  >(loadLatestFingerprint);
-  const [learningStats, setLearningStats] = useState<LearningStats>(() =>
-    calculateLearningStats(loadHistory()),
-  );
+  >(null);
+  const [learningStats, setLearningStats] =
+    useState<LearningStats>(EMPTY_LEARNING_STATS);
   const [showNinetyCelebration, setShowNinetyCelebration] = useState(false);
   const isSavingRef = useRef(false);
+
+  useEffect(() => {
+    const history = loadHistory();
+    setLearningStats(calculateLearningStats(history));
+    setLastSavedFingerprint(loadLatestFingerprint());
+  }, []);
 
   useEffect(() => {
     if (!showNinetyCelebration) {

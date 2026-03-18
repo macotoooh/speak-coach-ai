@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -22,11 +22,10 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  useEffect(() => {
-    setIsMobileMenuOpen(false);
-  }, [pathname]);
+  const [mobileMenuOpenedOnPath, setMobileMenuOpenedOnPath] = useState<
+    string | null
+  >(null);
+  const isMobileMenuOpen = mobileMenuOpenedOnPath === pathname;
 
   return (
     <>
@@ -38,7 +37,7 @@ export default function Sidebar() {
           <button
             type="button"
             aria-label="Open menu"
-            onClick={() => setIsMobileMenuOpen(true)}
+            onClick={() => setMobileMenuOpenedOnPath(pathname)}
             className="ui-btn-secondary rounded-md px-3 py-2 md:hidden"
           >
             <FontAwesomeIcon icon={faBars} className="h-4 w-4" />
@@ -72,7 +71,7 @@ export default function Sidebar() {
             ? "pointer-events-auto opacity-100"
             : "pointer-events-none opacity-0"
         }`}
-        onClick={() => setIsMobileMenuOpen(false)}
+        onClick={() => setMobileMenuOpenedOnPath(null)}
       />
       <aside
         className={`fixed inset-y-0 left-0 z-50 w-72 border-r border-border bg-surface p-4 transition-transform duration-200 md:hidden ${
@@ -85,7 +84,7 @@ export default function Sidebar() {
           <button
             type="button"
             aria-label="Close menu"
-            onClick={() => setIsMobileMenuOpen(false)}
+            onClick={() => setMobileMenuOpenedOnPath(null)}
             className="ui-btn-secondary rounded-md px-3 py-2"
           >
             <FontAwesomeIcon icon={faXmark} className="h-4 w-4" />
