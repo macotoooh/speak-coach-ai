@@ -32,6 +32,10 @@ export function readRecentPracticeHistory(limit: number): PracticeRecord[] {
     .slice(0, limit);
 }
 
+export function readPracticeRecordById(id: string): PracticeRecord | null {
+  return readPracticeHistory().find((record) => record.id === id) ?? null;
+}
+
 export function readLatestPracticeFingerprint(): string | null {
   const latest = readPracticeHistory()[0];
 

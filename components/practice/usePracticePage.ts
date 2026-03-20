@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import {
   CELEBRATION_VISIBLE_MS,
   EMPTY_LEARNING_STATS,
@@ -29,6 +30,7 @@ import {
 import {
   buildPracticeFingerprint,
   readLatestPracticeFingerprint,
+  readPracticeRecordById,
   readPracticeHistory,
   savePracticeHistory,
 } from "@/lib/practice-history";
@@ -36,7 +38,15 @@ import type { PronunciationFeedback } from "@/types/pronunciation";
 import type { PracticeRecord } from "@/types/PracticeRecord";
 import type { TextFeedbackResponse } from "@/types/text-feedback";
 
-export default function usePracticePage() {
+type UsePracticePageParams = {
+  reviewId?: string;
+};
+
+export default function usePracticePage({
+  reviewId,
+}: UsePracticePageParams = {}) {
+  const pathname = usePathname();
+  const router = useRouter();
   const [text, setText] = useState(INITIAL_PRACTICE_TEXT);
   const [difficultyLevel, setDifficultyLevel] = useState<ExampleSentenceLevel>(
     DEFAULT_EXAMPLE_SENTENCE_LEVEL,
@@ -73,7 +83,9 @@ export default function usePracticePage() {
     DEFAULT_FEEDBACK_LANGUAGE,
   );
   const [showNinetyCelebration, setShowNinetyCelebration] = useState(false);
+  const [reviewSentence, setReviewSentence] = useState<string | null>(null);
   const isSavingRef = useRef(false);
+  const appliedReviewIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     const history = readPracticeHistory();
@@ -110,6 +122,33 @@ export default function usePracticePage() {
   const clearSaveMessage = () => {
     setSaveMessage(null);
   };
+
+  useEffect(() => {
+    if (!reviewId) {
+      appliedReviewIdRef.current = null;
+      setReviewSentence(null);
+      return;
+    }
+
+    if (appliedReviewIdRef.current === reviewId) {
+      return;
+    }
+
+    const record = readPracticeRecordById(reviewId);
+    if (!record) {
+      appliedReviewIdRef.current = null;
+      setReviewSentence(null);
+      return;
+    }
+
+    appliedReviewIdRef.current = reviewId;
+    setReviewSentence(record.sentence);
+    setText(record.sentence);
+    resetTextFeedbackState();
+    resetPronunciationState();
+    clearSaveMessage();
+    setSentenceGenerationError(null);
+  }, [reviewId]);
 
   const handleTextChange = (nextText: string) => {
     setText(nextText);
@@ -166,6 +205,9 @@ export default function usePracticePage() {
   };
 
   const generateExampleSentence = async () => {
+    setReviewSentence(null);
+    appliedReviewIdRef.current = null;
+    router.replace(pathname, { scroll: false });
     setIsGeneratingSentence(true);
     setSentenceGenerationError(null);
 
@@ -386,6 +428,12 @@ export default function usePracticePage() {
   const isSaveDisabled =
     !aiFeedback || isSaving || currentFingerprint === lastSavedFingerprint;
 
+  const exitReviewMode = () => {
+    setReviewSentence(null);
+    appliedReviewIdRef.current = null;
+    router.replace(pathname, { scroll: false });
+  };
+
   return {
     aiFeedback,
     applySuggestion,
@@ -399,6 +447,7 @@ export default function usePracticePage() {
     isSaving,
     isTextAnalyzing,
     learningStats,
+    reviewSentence,
     saveMessage,
     saveToHistory,
     selectedText,
@@ -413,6 +462,7 @@ export default function usePracticePage() {
     textareaRef,
     updateSelectionState,
     analyzeSelectedText,
+    exitReviewMode,
     generateExampleSentence,
   };
 }

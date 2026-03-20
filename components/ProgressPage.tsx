@@ -1,11 +1,20 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 import { readPracticeHistory } from "@/lib/practice-history";
-import type { PracticeRecord } from "@/types/PracticeRecord";
+
+const subscribe = () => () => {};
+const EMPTY_RECORDS: readonly [] = [];
+const getClientSnapshot = () => true;
+const getServerSnapshot = () => false;
 
 export default function ProgressPage() {
-  const [records] = useState<PracticeRecord[]>(readPracticeHistory);
+  const isClient = useSyncExternalStore(
+    subscribe,
+    getClientSnapshot,
+    getServerSnapshot,
+  );
+  const records = isClient ? readPracticeHistory() : EMPTY_RECORDS;
 
   const stats = useMemo(() => {
     const totalPractices = records.length;

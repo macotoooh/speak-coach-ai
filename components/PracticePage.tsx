@@ -5,13 +5,18 @@ import Recorder from "@/components/Recorder";
 import CelebrationBanner from "@/components/practice/CelebrationBanner";
 import LearningStatsCard from "@/components/practice/LearningStatsCard";
 import PronunciationFeedbackPanel from "@/components/practice/PronunciationFeedbackPanel";
+import ReviewModeBanner from "@/components/practice/ReviewModeBanner";
 import SaveMessageBanner from "@/components/practice/SaveMessageBanner";
 import SentenceEditorSection from "@/components/practice/SentenceEditorSection";
 import TextFeedbackPanel from "@/components/practice/TextFeedbackPanel";
 import usePracticePage from "@/components/practice/usePracticePage";
 import Button, { BUTTON_SIZES, BUTTON_VARIANTS } from "@/components/ui/Button";
 
-export default function PracticePage() {
+type PracticePageProps = {
+  reviewId?: string;
+};
+
+export default function PracticePage({ reviewId }: PracticePageProps) {
   const {
     aiFeedback,
     applySuggestion,
@@ -27,6 +32,7 @@ export default function PracticePage() {
     isSaving,
     isTextAnalyzing,
     learningStats,
+    reviewSentence,
     saveMessage,
     saveToHistory,
     selectedText,
@@ -40,7 +46,8 @@ export default function PracticePage() {
     textFeedbackError,
     textareaRef,
     updateSelectionState,
-  } = usePracticePage();
+    exitReviewMode,
+  } = usePracticePage({ reviewId });
 
   return (
     <main className="flex min-h-full flex-col gap-6 wrap-break-word p-4 sm:p-6">
@@ -49,6 +56,10 @@ export default function PracticePage() {
       <LearningStatsCard learningStats={learningStats} />
 
       {showNinetyCelebration && <CelebrationBanner />}
+
+      {reviewSentence && (
+        <ReviewModeBanner sentence={reviewSentence} onExit={exitReviewMode} />
+      )}
 
       <SentenceEditorSection
         difficultyLevel={difficultyLevel}
