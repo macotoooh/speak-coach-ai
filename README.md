@@ -1,18 +1,18 @@
 # Speak Coach AI
 
-🔗 Live Demo: https://speak-polish-ai.vercel.app/
+🚀 Live Demo: https://speak-polish-ai.vercel.app/
 
-AI-powered pronunciation training app that helps non-native speakers improve their speaking skills through real-time feedback.
+AI-powered pronunciation training app with real-time feedback, audio-based scoring, and in-place grammar correction.
 
-As a non-native English speaker, I struggled to get clear, actionable feedback on my pronunciation — so I built a tool that combines speech input, AI analysis, and instant feedback into a simple daily practice experience.
+## What makes this app unique?
 
-This project focuses on delivering a smooth user experience for a complex AI-driven interaction.
+- Real-time pronunciation scoring using AI (audio-based, not just text)
+- Natural TTS playback with partial replay for focused practice
+- In-place grammar rewrite suggestions applied directly to user input
 
 ## Overview
 
-Speak Coach AI is a pronunciation training app focused on helping non-native speakers practice speaking with immediate AI feedback.
-
-It combines speech input, AI analysis, and progress tracking into a simple daily learning experience.
+Speak Coach AI is an AI-powered pronunciation training app designed to deliver real-time, actionable feedback for non-native speakers.
 
 ## Tech Stack
 
@@ -37,27 +37,30 @@ The goal is to make speaking practice more accessible and consistent.
 
 ## User Flow
 
-1. User enters or pastes a sentence
-2. Listens to native-like pronunciation via TTS
-3. Records their own voice
-4. Receives AI-generated pronunciation feedback and score
-5. Saves results and tracks progress over time
+1. User enters a sentence manually or generates a practice sentence by difficulty level (`Easy`, `Middle`, `High`)
+2. Listens to native-like TTS playback, including partial replay for selected text
+3. Selects part of the sentence to get AI text feedback and rewrite suggestions when needed
+4. Records their own voice and receives AI-generated pronunciation feedback and score
+5. Saves the practice result to history and continues building streak, XP, and level progress
+6. Adjusts app settings such as AI feedback language (`English` / `Japanese`) and theme (`Light` / `Dark` / `System`)
 
 ## Product Tour
 
 ### 1. Practice Screen
 
-Write or paste a sentence, listen to natural TTS playback, and record your voice.
+Write your own sentence or generate one by difficulty level, listen to natural TTS playback, analyze selected text, and record your voice.
 
 ![Top screen](public/demo.gif)
 
 #### Quick Steps (demo.gif)
 
 1. Type a sentence in the textarea.
-2. Click `Listen` to hear native-like playback.
-3. Select a word or phrase and click `Listen Selection` to replay only that part.
-4. Click `Record`, speak, then click `Stop`.
-5. Review AI pronunciation feedback and save the result to history.
+2. Or generate a new sentence based on the selected difficulty level.
+3. Click `Listen` to hear native-like playback.
+4. Select a word or phrase and click `Listen Selection` to replay only that part.
+5. Select text and click `Analyze text` to get grammar explanations and rewrite suggestions.
+6. Click `Record`, speak, then click `Stop`.
+7. Review AI pronunciation feedback and save the result to history.
 
 ### 2. History Screen
 
@@ -79,9 +82,9 @@ See your learning momentum at a glance.
 
 Adjust your app environment and learning workflow.
 
-- Access theme and UI preferences.
-- Manage practice-related options from one page.
-- Keep your setup consistent across sessions.
+- Switch the theme between `Light`, `Dark`, and `System`.
+- Choose whether AI explanations and coaching comments are shown in `English` or `Japanese`.
+- Keep appearance and feedback preferences consistent across sessions.
 
 ## Frontend Engineering Focus
 
@@ -178,6 +181,16 @@ Open `http://localhost:3000` in your browser.
 - Grammar explanations for selected text
 - Rewrite suggestions
 
-## Takeaways
+## Impact
 
-This project strengthened my ability to design user-focused interfaces and handle real-world complexity in frontend applications involving AI and media interactions.
+- Designed and delivered a complete AI-powered frontend product
+- Solved real UX challenges around audio interaction and asynchronous feedback
+- Built a system that balances technical complexity with a simple user experience
+
+## Engineering Highlights
+
+- Real-time audio recording and processing using MediaRecorder API
+- Asynchronous state coordination across recording, playback, and AI responses
+- Fallback architecture from audio analysis to transcription-based evaluation
+- This app handles multiple asynchronous flows (audio recording, AI processing, and UI updates) in a seamless user experience.
+- Designed to handle unreliable AI responses with graceful fallback and UI consistency
