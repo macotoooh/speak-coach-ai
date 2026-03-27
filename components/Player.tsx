@@ -10,31 +10,58 @@ type PlayerProps = {
 };
 
 export default function Player({ text, selectedText = "" }: PlayerProps) {
-  const { label, icon, isLoading, togglePlayback } = usePlayerTts({
+  const {
+    label,
+    icon,
+    isLoading,
+    playbackRate,
+    playbackSpeedOptions,
+    togglePlayback,
+    updatePlaybackRate,
+  } = usePlayerTts({
     text,
     selectedText,
   });
 
   return (
-    <Button
-      onMouseDown={(event) => {
-        event.preventDefault();
-      }}
-      onClick={() => void togglePlayback()}
-      disabled={isLoading}
-      variant={BUTTON_VARIANTS.primary}
-      size={BUTTON_SIZES.lg}
-      fullWidth
-      className="sm:w-auto"
-    >
-      {isLoading ? (
-        "Generating..."
-      ) : (
-        <>
-          <FontAwesomeIcon icon={icon} className="h-4 w-4" />
-          <span>{label}</span>
-        </>
-      )}
-    </Button>
+    <div className="grid gap-2 sm:w-auto">
+      <Button
+        onMouseDown={(event) => {
+          event.preventDefault();
+        }}
+        onClick={() => void togglePlayback()}
+        disabled={isLoading}
+        variant={BUTTON_VARIANTS.primary}
+        size={BUTTON_SIZES.lg}
+        fullWidth
+        className="sm:w-auto"
+      >
+        {isLoading ? (
+          "Generating..."
+        ) : (
+          <>
+            <FontAwesomeIcon icon={icon} className="h-4 w-4" />
+            <span>{label}</span>
+          </>
+        )}
+      </Button>
+
+      <div className="grid grid-cols-3 gap-2 rounded-lg bg-surface-2 p-1">
+        {playbackSpeedOptions.map((speed) => (
+          <Button
+            key={speed}
+            onClick={() => updatePlaybackRate(speed)}
+            aria-pressed={playbackRate === speed}
+            variant={BUTTON_VARIANTS.secondary}
+            size={BUTTON_SIZES.sm}
+            className={`w-full ${
+              playbackRate === speed ? "ui-btn-speed-active" : "ui-btn-speed"
+            } font-medium`}
+          >
+            {speed}x
+          </Button>
+        ))}
+      </div>
+    </div>
   );
 }
