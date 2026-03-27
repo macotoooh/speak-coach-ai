@@ -9,6 +9,8 @@ import {
 
 const CACHE_LIMIT = 20;
 const DEFAULT_BROWSER_LANGUAGE = "en-US";
+export const PLAYBACK_SPEED_OPTIONS = [0.75, 1, 1.25] as const;
+export const DEFAULT_PLAYBACK_SPEED = 1;
 const PREFERRED_VOICE_NAMES = [
   "Samantha",
   "Google US English",
@@ -29,6 +31,7 @@ export default function usePlayerTts({
   selectedText = "",
 }: UsePlayerTtsParams) {
   const [playbackState, setPlaybackState] = useState<PlaybackState>("idle");
+  const [playbackRate, setPlaybackRate] = useState<number>(DEFAULT_PLAYBACK_SPEED);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioCacheRef = useRef<Map<string, string>>(new Map());
   const playbackEngineRef = useRef<PlaybackEngine>(null);
@@ -91,12 +94,16 @@ export default function usePlayerTts({
     );
   };
 
-  const playAudio = async (objectUrl: string) => {
+  const playAudio = async (
+    objectUrl: string,
+    rate: number = playbackRate,
+  ) => {
     if (audioRef.current) {
       audioRef.current.pause();
     }
 
     const audio = new Audio(objectUrl);
+    audio.playbackRate = rate;
     audioRef.current = audio;
     playbackEngineRef.current = "audio";
     audio.onplay = () => {
@@ -118,7 +125,10 @@ export default function usePlayerTts({
     await audio.play();
   };
 
-  const speakWithBrowserVoice = (speechText: string) => {
+  const speakWithBrowserVoice = (
+    speechText: string,
+    rate: number = playbackRate,
+  ) => {
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
@@ -137,7 +147,7 @@ export default function usePlayerTts({
       utterance.lang = DEFAULT_BROWSER_LANGUAGE;
     }
 
-    utterance.rate = 0.95;
+    utterance.rate = rate;
     utterance.pitch = 1;
     utterance.volume = 1;
     utterance.onstart = () => {
@@ -243,6 +253,23 @@ export default function usePlayerTts({
     }
   };
 
+  const updatePlaybackRate = (nextRate: number) => {
+    setPlaybackRate(nextRate);
+
+    if (audioRef.current) {
+      audioRef.current.playbackRate = nextRate;
+    }
+
+    if (
+      playbackEngineRef.current === "browser" &&
+      (playbackState === "playing" || playbackState === "paused")
+    ) {
+      const speechText = getSpeechText();
+      speechSynthesis.cancel();
+      speakWithBrowserVoice(speechText, nextRate);
+    }
+  };
+
   const togglePlayback = async () => {
     if (playbackState === "loading") {
       return;
@@ -293,6 +320,9 @@ export default function usePlayerTts({
     label: getLabel(),
     icon: getIcon(),
     isLoading: playbackState === "loading",
+    playbackRate,
+    playbackSpeedOptions: PLAYBACK_SPEED_OPTIONS,
     togglePlayback,
+    updatePlaybackRate,
   };
 }

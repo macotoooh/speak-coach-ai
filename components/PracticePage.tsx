@@ -89,7 +89,7 @@ export default function PracticePage({ reviewId }: PracticePageProps) {
         onAnalyzeText={() => void analyzeSelectedText()}
       />
 
-      <div className="grid w-full max-w-2xl grid-cols-1 gap-3 sm:flex sm:flex-wrap">
+      <div className="grid w-full max-w-2xl grid-cols-1 gap-3 sm:flex sm:flex-wrap sm:items-start">
         <Player text={text} selectedText={selectedText} />
         <Recorder onRecorded={handleRecordedAudio} disabled={isAnalyzing} />
         <Button
