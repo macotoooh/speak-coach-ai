@@ -11,6 +11,8 @@ const CACHE_LIMIT = 20;
 const DEFAULT_BROWSER_LANGUAGE = "en-US";
 export const PLAYBACK_SPEED_OPTIONS = [0.75, 1, 1.25] as const;
 export const DEFAULT_PLAYBACK_SPEED = 1;
+const SILENT_AUDIO_DATA_URI =
+  "data:audio/wav;base64,UklGRiUAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQEAAACA";
 const PREFERRED_VOICE_NAMES = [
   "Samantha",
   "Google US English",
@@ -34,6 +36,7 @@ export default function usePlayerTts({
   const [playbackRate, setPlaybackRate] = useState<number>(DEFAULT_PLAYBACK_SPEED);
   const [isRepeatEnabled, setIsRepeatEnabled] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioElementRef = useRef<HTMLAudioElement | null>(null);
   const audioCacheRef = useRef<Map<string, string>>(new Map());
   const playbackEngineRef = useRef<PlaybackEngine>(null);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
@@ -57,6 +60,13 @@ export default function usePlayerTts({
         audioRef.current = null;
       }
 
+      if (audioElementRef.current) {
+        audioElementRef.current.pause();
+        audioElementRef.current.removeAttribute("src");
+        audioElementRef.current.load();
+        audioElementRef.current = null;
+      }
+
       utteranceRef.current = null;
 
       for (const url of cachedAudio.values()) {
@@ -72,6 +82,13 @@ export default function usePlayerTts({
   const resetPlayback = () => {
     if (audioRef.current) {
       audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      audioRef.current.onplay = null;
+      audioRef.current.onpause = null;
+      audioRef.current.onended = null;
+      audioRef.current.onerror = null;
+      audioRef.current.removeAttribute("src");
+      audioRef.current.load();
       audioRef.current = null;
     }
 
@@ -107,18 +124,53 @@ export default function usePlayerTts({
     );
   };
 
+  const getAudioElement = () => {
+    if (audioElementRef.current) {
+      return audioElementRef.current;
+    }
+
+    const audio = new Audio();
+    audio.preload = "auto";
+    audio.setAttribute("playsinline", "true");
+    audioElementRef.current = audio;
+    return audio;
+  };
+
+  const unlockAudioPlayback = async () => {
+    const audio = getAudioElement();
+
+    if (audio.dataset.unlocked === "true") {
+      return;
+    }
+
+    audio.src = SILENT_AUDIO_DATA_URI;
+    audio.muted = true;
+
+    try {
+      await audio.play();
+      audio.dataset.unlocked = "true";
+    } catch {
+      return;
+    } finally {
+      audio.pause();
+      audio.currentTime = 0;
+      audio.muted = false;
+      audio.removeAttribute("src");
+      audio.load();
+    }
+  };
+
   const playAudio = async (
     objectUrl: string,
     rate: number = playbackRate,
   ) => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
-
     browserPlaybackTokenRef.current += 1;
     speechSynthesis.cancel();
 
-    const audio = new Audio(objectUrl);
+    const audio = getAudioElement();
+    audio.pause();
+    audio.currentTime = 0;
+    audio.src = objectUrl;
     audio.loop = isRepeatEnabledRef.current;
     audio.playbackRate = rate;
     audioRef.current = audio;
@@ -321,6 +373,7 @@ export default function usePlayerTts({
       return;
     }
 
+    await unlockAudioPlayback();
     await speak();
   };
 
