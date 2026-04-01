@@ -32,10 +32,21 @@ export default function usePlayerTts({
 }: UsePlayerTtsParams) {
   const [playbackState, setPlaybackState] = useState<PlaybackState>("idle");
   const [playbackRate, setPlaybackRate] = useState<number>(DEFAULT_PLAYBACK_SPEED);
+  const [isRepeatEnabled, setIsRepeatEnabled] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioCacheRef = useRef<Map<string, string>>(new Map());
   const playbackEngineRef = useRef<PlaybackEngine>(null);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const isRepeatEnabledRef = useRef(isRepeatEnabled);
+  const browserPlaybackTokenRef = useRef(0);
+
+  useEffect(() => {
+    isRepeatEnabledRef.current = isRepeatEnabled;
+
+    if (audioRef.current) {
+      audioRef.current.loop = isRepeatEnabled;
+    }
+  }, [isRepeatEnabled]);
 
   useEffect(() => {
     const cachedAudio = audioCacheRef.current;
@@ -53,6 +64,7 @@ export default function usePlayerTts({
       }
 
       cachedAudio.clear();
+      browserPlaybackTokenRef.current += 1;
       speechSynthesis.cancel();
     };
   }, []);
@@ -63,6 +75,7 @@ export default function usePlayerTts({
       audioRef.current = null;
     }
 
+    browserPlaybackTokenRef.current += 1;
     utteranceRef.current = null;
     playbackEngineRef.current = null;
     setPlaybackState("idle");
@@ -102,7 +115,11 @@ export default function usePlayerTts({
       audioRef.current.pause();
     }
 
+    browserPlaybackTokenRef.current += 1;
+    speechSynthesis.cancel();
+
     const audio = new Audio(objectUrl);
+    audio.loop = isRepeatEnabledRef.current;
     audio.playbackRate = rate;
     audioRef.current = audio;
     playbackEngineRef.current = "audio";
@@ -134,6 +151,8 @@ export default function usePlayerTts({
       audioRef.current = null;
     }
 
+    browserPlaybackTokenRef.current += 1;
+    const playbackToken = browserPlaybackTokenRef.current;
     speechSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(speechText);
@@ -160,9 +179,22 @@ export default function usePlayerTts({
       setPlaybackState("playing");
     };
     utterance.onend = () => {
+      if (browserPlaybackTokenRef.current !== playbackToken) {
+        return;
+      }
+
+      if (isRepeatEnabledRef.current) {
+        speakWithBrowserVoice(speechText, rate);
+        return;
+      }
+
       resetPlayback();
     };
     utterance.onerror = () => {
+      if (browserPlaybackTokenRef.current !== playbackToken) {
+        return;
+      }
+
       resetPlayback();
     };
     speechSynthesis.speak(utterance);
@@ -270,6 +302,10 @@ export default function usePlayerTts({
     }
   };
 
+  const toggleRepeat = () => {
+    setIsRepeatEnabled((currentValue) => !currentValue);
+  };
+
   const togglePlayback = async () => {
     if (playbackState === "loading") {
       return;
@@ -320,9 +356,11 @@ export default function usePlayerTts({
     label: getLabel(),
     icon: getIcon(),
     isLoading: playbackState === "loading",
+    isRepeatEnabled,
     playbackRate,
     playbackSpeedOptions: PLAYBACK_SPEED_OPTIONS,
     togglePlayback,
+    toggleRepeat,
     updatePlaybackRate,
   };
 }

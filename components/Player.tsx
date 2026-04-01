@@ -2,6 +2,7 @@
 
 import Button, { BUTTON_SIZES, BUTTON_VARIANTS } from "@/components/ui/Button";
 import usePlayerTts from "@/components/player/usePlayerTts";
+import { faRepeat } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 type PlayerProps = {
@@ -14,9 +15,11 @@ export default function Player({ text, selectedText = "" }: PlayerProps) {
     label,
     icon,
     isLoading,
+    isRepeatEnabled,
     playbackRate,
     playbackSpeedOptions,
     togglePlayback,
+    toggleRepeat,
     updatePlaybackRate,
   } = usePlayerTts({
     text,
@@ -44,6 +47,20 @@ export default function Player({ text, selectedText = "" }: PlayerProps) {
             <span>{label}</span>
           </>
         )}
+      </Button>
+
+      <Button
+        onClick={toggleRepeat}
+        variant={BUTTON_VARIANTS.secondary}
+        size={BUTTON_SIZES.sm}
+        fullWidth
+        aria-pressed={isRepeatEnabled}
+        className={`sm:w-auto ${
+          isRepeatEnabled ? "ui-btn-speed-active" : "ui-btn-speed"
+        } font-medium`}
+      >
+        <FontAwesomeIcon icon={faRepeat} className="h-3.5 w-3.5" />
+        <span>{isRepeatEnabled ? "Repeat On" : "Repeat Off"}</span>
       </Button>
 
       <div className="grid grid-cols-3 gap-2 rounded-lg bg-surface-2 p-1">
