@@ -10,17 +10,19 @@ type DifficultySelectProps = {
   value: ExampleSentenceLevel;
   onChange: (nextValue: ExampleSentenceLevel) => void;
   disabled?: boolean;
+  showLabel?: boolean;
 };
 
 export default function DifficultySelect({
   value,
   onChange,
   disabled = false,
+  showLabel = true,
 }: DifficultySelectProps) {
   return (
-    <div className="space-y-2">
-      <p className="text-sm ui-text-muted">Sentence difficulty</p>
-      <div className="grid grid-cols-3 gap-2 rounded-lg bg-surface-2 p-1">
+    <div className="w-full space-y-2 lg:w-auto">
+      {showLabel && <p className="text-sm ui-text-muted">Sentence difficulty</p>}
+      <div className="grid grid-cols-3 gap-2 rounded-lg bg-surface-2 p-1 lg:inline-grid lg:w-auto">
         {EXAMPLE_SENTENCE_LEVELS.map((option) => (
           <Button
             key={option.value}
@@ -32,8 +34,8 @@ export default function DifficultySelect({
                 ? BUTTON_VARIANTS.primary
                 : BUTTON_VARIANTS.secondary
             }
-            size={BUTTON_SIZES.md}
-            className="w-full"
+            size={BUTTON_SIZES.sm}
+            className="w-full lg:min-w-32"
           >
             {option.label}
           </Button>

@@ -34,3 +34,12 @@ export const Default: Story = {
   },
   render: () => <DifficultySelectStory />,
 };
+
+export const Disabled: Story = {
+  args: {
+    value: DEFAULT_EXAMPLE_SENTENCE_LEVEL,
+    onChange: () => {},
+    disabled: true,
+  },
+  render: () => <DifficultySelect value={DEFAULT_EXAMPLE_SENTENCE_LEVEL} onChange={() => {}} disabled />,
+};

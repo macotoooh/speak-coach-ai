@@ -69,6 +69,9 @@ export default function usePracticePage({
   const [sentenceGenerationError, setSentenceGenerationError] = useState<
     string | null
   >(null);
+  const [generatedSentence, setGeneratedSentence] = useState<string | null>(
+    null,
+  );
   const [textFeedbackError, setTextFeedbackError] = useState<string | null>(
     null,
   );
@@ -226,6 +229,7 @@ export default function usePracticePage({
     appliedReviewIdRef.current = reviewId;
     setReviewSentence(record.sentence);
     setText(record.sentence);
+    setGeneratedSentence(null);
     resetTextFeedbackState();
     resetPronunciationState();
     clearSaveMessage();
@@ -295,10 +299,7 @@ export default function usePracticePage({
 
     try {
       const nextSentence = await fetchExampleSentence();
-      setText(nextSentence);
-      resetTextFeedbackState();
-      resetPronunciationState();
-      clearSaveMessage();
+      setGeneratedSentence(nextSentence);
     } catch (error) {
       setSentenceGenerationError(
         getUnknownErrorMessage(error, "Failed to generate sentence."),
@@ -306,6 +307,26 @@ export default function usePracticePage({
     } finally {
       setIsGeneratingSentence(false);
     }
+  };
+
+  const applyGeneratedSentence = () => {
+    if (!generatedSentence) {
+      return;
+    }
+
+    setReviewSentence(null);
+    appliedReviewIdRef.current = null;
+    router.replace(pathname, { scroll: false });
+    setText(generatedSentence);
+    setGeneratedSentence(null);
+    resetTextFeedbackState();
+    resetPronunciationState();
+    clearSaveMessage();
+  };
+
+  const dismissGeneratedSentence = () => {
+    setGeneratedSentence(null);
+    setSentenceGenerationError(null);
   };
 
   const useRecommendedSentence = () => {
@@ -531,11 +552,14 @@ export default function usePracticePage({
     isSaving,
     isTextAnalyzing,
     learningStats,
+    generatedSentence,
     recommendedSentence,
     recommendedSentenceError,
     recommendedWeaknessLabel: recommendedWeakness
       ? getWeaknessTagLabel(recommendedWeakness)
       : null,
+    applyGeneratedSentence,
+    dismissGeneratedSentence,
     refreshRecommendedSentence,
     reviewSentence,
     saveMessage,

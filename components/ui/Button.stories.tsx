@@ -52,3 +52,11 @@ export const WithIcon: Story = {
     size: BUTTON_SIZES.lg,
   },
 };
+
+export const CompactControl: Story = {
+  args: {
+    children: "Generate candidate",
+    size: BUTTON_SIZES.sm,
+    variant: BUTTON_VARIANTS.primary,
+  },
+};

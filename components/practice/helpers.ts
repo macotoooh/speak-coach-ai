@@ -115,12 +115,12 @@ export function getSaveMessageTone(message: string | null) {
 }
 
 export function getGenerateButtonLabel(
-  text: string,
+  generatedSentence: string | null,
   isLoading: boolean,
 ): string {
   if (isLoading) {
     return "Generating...";
   }
 
-  return text.trim() ? "Regenerate sentence" : "Generate sentence";
+  return generatedSentence ? "Regenerate candidate" : "Generate candidate";
 }

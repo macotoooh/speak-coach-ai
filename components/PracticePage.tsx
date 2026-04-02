@@ -24,6 +24,7 @@ export default function PracticePage({ reviewId }: PracticePageProps) {
     difficultyLevel,
     feedbackError,
     generateExampleSentence,
+    generatedSentence,
     handleRecordedAudio,
     handleTextChange,
     isAnalyzing,
@@ -33,6 +34,8 @@ export default function PracticePage({ reviewId }: PracticePageProps) {
     isSaving,
     isTextAnalyzing,
     learningStats,
+    applyGeneratedSentence,
+    dismissGeneratedSentence,
     recommendedSentence,
     recommendedSentenceError,
     recommendedWeaknessLabel,
@@ -71,6 +74,7 @@ export default function PracticePage({ reviewId }: PracticePageProps) {
         difficultyLevel={difficultyLevel}
         isGeneratingSentence={isGeneratingSentence}
         sentenceGenerationError={sentenceGenerationError}
+        generatedSentence={generatedSentence}
         text={text}
         selectedText={selectedText}
         selectionRange={selectionRange}
@@ -82,6 +86,8 @@ export default function PracticePage({ reviewId }: PracticePageProps) {
         recommendedSentenceError={recommendedSentenceError}
         onDifficultyChange={setDifficultyLevel}
         onGenerateSentence={() => void generateExampleSentence()}
+        onApplyGeneratedSentence={applyGeneratedSentence}
+        onDismissGeneratedSentence={dismissGeneratedSentence}
         onUseRecommendedSentence={useRecommendedSentence}
         onRefreshRecommendedSentence={() => void refreshRecommendedSentence()}
         onTextChange={handleTextChange}
@@ -89,20 +95,25 @@ export default function PracticePage({ reviewId }: PracticePageProps) {
         onAnalyzeText={() => void analyzeSelectedText()}
       />
 
-      <div className="grid w-full max-w-2xl grid-cols-1 gap-3 sm:flex sm:flex-wrap sm:items-start">
-        <Player text={text} selectedText={selectedText} />
-        <Recorder onRecorded={handleRecordedAudio} disabled={isAnalyzing} />
-        <Button
-          onClick={saveToHistory}
-          variant={BUTTON_VARIANTS.primary}
-          size={BUTTON_SIZES.lg}
-          fullWidth
-          className="sm:w-auto"
-          disabled={isSaveDisabled}
-        >
-          {isSaving ? "Saving..." : "Save to History"}
-        </Button>
-      </div>
+      <Player
+        text={text}
+        selectedText={selectedText}
+        auxiliaryActions={
+          <>
+            <Recorder onRecorded={handleRecordedAudio} disabled={isAnalyzing} />
+            <Button
+              onClick={saveToHistory}
+              variant={BUTTON_VARIANTS.primary}
+              size={BUTTON_SIZES.lg}
+              fullWidth
+              className="lg:w-auto lg:min-w-52"
+              disabled={isSaveDisabled}
+            >
+              {isSaving ? "Saving..." : "Save to History"}
+            </Button>
+          </>
+        }
+      />
 
       {saveMessage && <SaveMessageBanner saveMessage={saveMessage} />}
 
