@@ -42,6 +42,8 @@ export default function usePlayerTts({
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const isRepeatEnabledRef = useRef(isRepeatEnabled);
   const browserPlaybackTokenRef = useRef(0);
+  const requestTokenRef = useRef(0);
+  const previousSpeechTextRef = useRef<string | null>(null);
 
   useEffect(() => {
     isRepeatEnabledRef.current = isRepeatEnabled;
@@ -92,7 +94,9 @@ export default function usePlayerTts({
       audioRef.current = null;
     }
 
+    requestTokenRef.current += 1;
     browserPlaybackTokenRef.current += 1;
+    speechSynthesis.cancel();
     utteranceRef.current = null;
     playbackEngineRef.current = null;
     setPlaybackState("idle");
@@ -102,6 +106,26 @@ export default function usePlayerTts({
     const trimmedSelectedText = selectedText.trim();
     return trimmedSelectedText.length > 0 ? trimmedSelectedText : text;
   };
+
+  useEffect(() => {
+    const trimmedSelectedText = selectedText.trim();
+    const nextSpeechText =
+      trimmedSelectedText.length > 0 ? trimmedSelectedText : text;
+    const previousSpeechText = previousSpeechTextRef.current;
+
+    previousSpeechTextRef.current = nextSpeechText;
+
+    if (previousSpeechText === null || previousSpeechText === nextSpeechText) {
+      return;
+    }
+
+    if (playbackState === "idle") {
+      requestTokenRef.current += 1;
+      return;
+    }
+
+    resetPlayback();
+  }, [playbackState, selectedText, text]);
 
   const getPreferredVoice = () => {
     const voices = speechSynthesis.getVoices();
@@ -273,6 +297,8 @@ export default function usePlayerTts({
 
   const speak = async () => {
     const speechText = getSpeechText();
+    const requestToken = requestTokenRef.current + 1;
+    requestTokenRef.current = requestToken;
 
     if (!speechText.trim()) {
       return;
@@ -280,6 +306,10 @@ export default function usePlayerTts({
 
     const cachedUrl = audioCacheRef.current.get(speechText);
     if (cachedUrl) {
+      if (requestTokenRef.current !== requestToken) {
+        return;
+      }
+
       speechSynthesis.cancel();
       await playAudio(cachedUrl);
       return;
@@ -302,11 +332,21 @@ export default function usePlayerTts({
 
       const audioBlob = await response.blob();
       const objectUrl = URL.createObjectURL(audioBlob);
+
+      if (requestTokenRef.current !== requestToken) {
+        URL.revokeObjectURL(objectUrl);
+        return;
+      }
+
       audioCacheRef.current.set(speechText, objectUrl);
       evictOldestCachedAudio();
 
       await playAudio(objectUrl);
     } catch {
+      if (requestTokenRef.current !== requestToken) {
+        return;
+      }
+
       speakWithBrowserVoice(speechText);
     } finally {
       setPlaybackState((currentState) =>
